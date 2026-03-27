@@ -213,7 +213,7 @@ def render_caselet(key: str):
         ax.set_yticks([])
         ax.set_xlabel("Predicted Probability", color=LIGHT_BLUE, fontsize=9)
         ax.spines[:].set_visible(False)
-        st.pyplot(fig, use_container_width=True)
+        st.pyplot(fig, use_container_width=True, clear_figure=True)
         plt.close()
 
         # ── OR impact breakdown ──
@@ -238,7 +238,7 @@ def render_caselet(key: str):
                      f"{val:.3f}", va="center",
                      ha="left" if val >= 0 else "right",
                      color="white", fontsize=8)
-        st.pyplot(fig2, use_container_width=True)
+        st.pyplot(fig2, use_container_width=True, clear_figure=True)
         plt.close()
 
     # ════════════════════════════════════════════════════════════════════════
@@ -348,7 +348,7 @@ def render_caselet(key: str):
         ax3b.set_title("Error Cost vs Threshold", color=GOLD, fontsize=10)
         ax3b.legend(fontsize=7); ax3b.grid(alpha=0.3)
         fig3.tight_layout(pad=1.5)
-        st.pyplot(fig3, use_container_width=True)
+        st.pyplot(fig3, use_container_width=True, clear_figure=True)
         plt.close()
 
     # ════════════════════════════════════════════════════════════════════════
@@ -403,7 +403,7 @@ def render_caselet(key: str):
                          xytext=(fprs_roc[ks_idx]+0.1, tprs_roc[ks_idx]-0.1),
                          color="#4ade80", fontsize=8,
                          arrowprops=dict(arrowstyle="->", color="#4ade80"))
-            st.pyplot(fig4, use_container_width=True)
+            st.pyplot(fig4, use_container_width=True, clear_figure=True)
             plt.close()
 
         with col_roc_info:

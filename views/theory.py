@@ -65,7 +65,7 @@ def render():
         axes[1].grid(alpha=0.3)
         axes[1].text(-5.5, 0.92, "Always 0 < P < 1 ✅", color="#4ade80", fontsize=8)
         fig.tight_layout(pad=1.5)
-        st.pyplot(fig, use_container_width=True)
+        st.pyplot(fig, use_container_width=True, clear_figure=True)
         plt.close()
 
         section_title("Key Assumptions")

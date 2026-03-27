@@ -51,8 +51,42 @@ def inject_styles():
         background: {GOLD}22 !important;
         border-color: {GOLD} !important;
         transform: translateX(4px);
+        color: {TXT_MAIN} !important;
     }}
 
+    /* ── MAIN CONTENT BUTTONS (Open C1 → etc) ── */
+    .stButton > button {{
+        background: {DARK_BLUE} !important;
+        color: {TXT_MAIN} !important;
+        border: 1px solid {GOLD}66 !important;
+        border-radius: 8px !important;
+        font-family: 'Source Sans Pro', sans-serif !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        padding: 0.5rem 1rem !important;
+    }}
+    .stButton > button:hover {{
+        background: {GOLD}22 !important;
+        border-color: {GOLD} !important;
+        color: {GOLD} !important;
+        box-shadow: 0 0 12px {GOLD}44 !important;
+    }}
+    .stButton > button:active {{
+        background: {GOLD}44 !important;
+        color: {TXT_MAIN} !important;
+    }}
+    .stButton > button:focus {{
+        background: {DARK_BLUE} !important;
+        color: {TXT_MAIN} !important;
+        border-color: {GOLD} !important;
+        box-shadow: 0 0 0 2px {GOLD}44 !important;
+    }}
+
+    /* ── HIDE MATPLOTLIB FIGURE DEBUG OUTPUT ── */
+    .element-container iframe {{ display: none; }}
+    [data-testid="stCaptionContainer"] {{ display: none !important; }}
+    
     /* ── CARDS ── */
     .mp-card {{
         background: {CARD_BG};
