@@ -77,23 +77,32 @@ def render_caselet(key: str):
 
         with col_left:
             section_title("Training Dataset")
-            header = " | ".join([f"<th>{f}</th>" for f in c["features"]])
-            rows_html = ""
+            # Build entire table in one string to prevent HTML leakage
+            thead = "<tr>" + "".join(f'<th style="background:{DARK_BLUE};color:{GOLD};padding:0.5rem 0.6rem;font-size:0.72rem;text-transform:uppercase;">{f}</th>' for f in c["features"])
+            thead += f'<th style="background:{DARK_BLUE};color:{GOLD};padding:0.5rem 0.6rem;font-size:0.72rem;text-transform:uppercase;">Actual Y</th>'
+            thead += f'<th style="background:{DARK_BLUE};color:{GOLD};padding:0.5rem 0.6rem;font-size:0.72rem;text-transform:uppercase;">P&#770;</th></tr>'
+
+            tbody = ""
             for i in range(len(X)):
                 outcome_color = RED if y[i] == 1 else GREEN
-                outcome_txt = f"<strong style='color:{outcome_color};'>{y[i]} ({c['outcome_label'] if y[i]==1 else 'No '+c['outcome_label']})</strong>"
+                outcome_txt = f"<strong style='color:{outcome_color};'>{int(y[i])} ({'Default' if y[i]==1 else 'No Default'})</strong>"
                 p_color = RED if proba[i] >= 0.5 else GREEN
-                cells = "".join([f"<td>{X[i,j]:.1f}</td>" for j in range(X.shape[1])])
-                rows_html += f"<tr>{cells}<td>{outcome_txt}</td><td style='color:{p_color};font-weight:600;'>{proba[i]:.3f}</td></tr>"
+                cells = "".join(f'<td style="padding:0.45rem 0.6rem;border-bottom:1px solid #1a3355;">{X[i,j]:.1f}</td>' for j in range(X.shape[1]))
+                tbody += (
+                    f"<tr>"
+                    f"{cells}"
+                    f'<td style="padding:0.45rem 0.6rem;border-bottom:1px solid #1a3355;">{outcome_txt}</td>'
+                    f'<td style="padding:0.45rem 0.6rem;border-bottom:1px solid #1a3355;color:{p_color};font-weight:600;">{proba[i]:.3f}</td>'
+                    f"</tr>"
+                )
 
-            st.markdown(f"""
-            <div style="overflow-x:auto;">
-            <table class="mp-table">
-            <tr>{"".join(f"<th>{f}</th>" for f in c["features"])}<th>Actual Y</th><th>P̂</th></tr>
-            {rows_html}
-            </table>
-            </div>
-            """, unsafe_allow_html=True)
+            dataset_table_html = (
+                f'<div style="overflow-x:auto;">'
+                f'<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">'
+                f"{thead}{tbody}"
+                f"</table></div>"
+            )
+            st.markdown(dataset_table_html, unsafe_allow_html=True)
 
         with col_right:
             section_title("Estimated Coefficients")
@@ -432,8 +441,8 @@ def render_caselet(key: str):
             sorted_idx = np.argsort(proba)[::-1]
             n_pos = max(int(np.sum(y == 1)), 1)
             n_neg = max(int(np.sum(y == 0)), 1)
-            roc_rows = ""
             cum_tp, cum_fp = 0, 0
+            roc_body = ""
             for rank_i, obs_idx in enumerate(sorted_idx):
                 if y[obs_idx] == 1:
                     cum_tp += 1
@@ -442,22 +451,32 @@ def render_caselet(key: str):
                 tpr_val = cum_tp / n_pos
                 fpr_val = cum_fp / n_neg
                 act_color = RED if y[obs_idx] == 1 else GREEN
-                roc_rows += (
-                    f"<tr><td>{rank_i+1}</td>"
-                    f"<td style='color:{act_color};font-weight:600;'>{int(y[obs_idx])}</td>"
-                    f"<td>{tpr_val:.2f}</td>"
-                    f"<td>{fpr_val:.2f}</td>"
-                    f"<td class='mp-mono' style='font-size:0.7rem;'>{proba[obs_idx]:.3f}</td></tr>"
+                roc_body += (
+                    f'<tr>'
+                    f'<td style="padding:0.4rem 0.6rem;border-bottom:1px solid #1a3355;">{rank_i+1}</td>'
+                    f'<td style="padding:0.4rem 0.6rem;border-bottom:1px solid #1a3355;color:{act_color};font-weight:600;">{int(y[obs_idx])}</td>'
+                    f'<td style="padding:0.4rem 0.6rem;border-bottom:1px solid #1a3355;">{tpr_val:.2f}</td>'
+                    f'<td style="padding:0.4rem 0.6rem;border-bottom:1px solid #1a3355;">{fpr_val:.2f}</td>'
+                    f'<td style="padding:0.4rem 0.6rem;border-bottom:1px solid #1a3355;font-family:monospace;font-size:0.72rem;color:{GOLD};">{proba[obs_idx]:.3f}</td>'
+                    f'</tr>'
                 )
-            st.markdown(f"""
-            <div class="mp-card" style="margin-top:0.8rem;">
-            <div class="mp-label">ROC Table (sorted by P̂ descending)</div>
-            <table class="mp-table" style="margin-top:0.4rem;font-size:0.75rem;">
-            <tr><th>Rank</th><th>Actual Y</th><th>TPR</th><th>FPR</th><th>P̂</th></tr>
-            {roc_rows}
-            </table>
-            </div>
-            """, unsafe_allow_html=True)
+            roc_th = f"background:{DARK_BLUE};color:{GOLD};padding:0.45rem 0.6rem;font-size:0.72rem;text-transform:uppercase;"
+            roc_table_html = (
+                f'<div style="background:{CARD_BG};border:1px solid {DARK_BLUE};border-radius:8px;padding:0.8rem;margin-top:0.8rem;">'
+                f'<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:{GOLD};font-weight:600;margin-bottom:0.5rem;">ROC Table (sorted by P&#770; descending)</div>'
+                f'<div style="overflow-x:auto;">'
+                f'<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">'
+                f'<tr>'
+                f'<th style="{roc_th}">Rank</th>'
+                f'<th style="{roc_th}">Actual Y</th>'
+                f'<th style="{roc_th}">TPR</th>'
+                f'<th style="{roc_th}">FPR</th>'
+                f'<th style="{roc_th}">P&#770;</th>'
+                f'</tr>'
+                f'{roc_body}'
+                f'</table></div></div>'
+            )
+            st.markdown(roc_table_html, unsafe_allow_html=True)
 
     # ════════════════════════════════════════════════════════════════════════
     # TAB 5 — Cost Calculator
@@ -507,37 +526,48 @@ def render_caselet(key: str):
         </div>
         """, unsafe_allow_html=True)
 
-        # Full table
-        section_title("Cost Analysis Table")
-        table_rows = ""
-        for r in sweep:
-            highlight = "background:#0d3320;" if r['threshold'] == best['threshold'] else ""
-            table_rows += f"""
-            <tr style="{highlight}">
-                <td style="font-weight:600;color:{GOLD};">{r['threshold']:.2f}</td>
-                <td style="color:#4ade80;">{r['tp']}</td>
-                <td style="color:#fbbf24;">{r['fp']}</td>
-                <td style="color:#f87171;">{r['fn']}</td>
-                <td>{r['tn']}</td>
-                <td>{r['accuracy']}%</td>
-                <td>{r['recall']}%</td>
-                <td style="color:#fbbf24;">₹{r['type1_cost']:,}</td>
-                <td style="color:#f87171;">₹{r['type2_cost']:,}</td>
-                <td style="font-weight:700;color:{RED};">₹{r['total_cost']:,}</td>
-            </tr>"""
-
-        st.markdown(f"""
-        <div style="overflow-x:auto;">
-        <table class="mp-table" style="font-size:0.78rem;">
-        <tr>
-            <th>Threshold</th><th>TP</th><th>FP</th><th>FN</th><th>TN</th>
-            <th>Accuracy</th><th>Recall</th>
-            <th>Type I Cost</th><th>Type II Cost</th><th>Total Cost</th>
-        </tr>
-        {table_rows}
-        </table>
+        # Full table — build entirely in one string, render in one call
+        table_header = f"""
+        <div class="mp-section-title" style="font-family:'Playfair Display',serif;
+             font-size:1.1rem;font-weight:600;color:{LIGHT_BLUE};
+             border-bottom:2px solid {GOLD}44;padding-bottom:0.4rem;margin:1rem 0;">
+             Cost Analysis Table
         </div>
-        """, unsafe_allow_html=True)
+        <div style="overflow-x:auto;">
+        <table class="mp-table" style="font-size:0.78rem;width:100%;border-collapse:collapse;">
+        <tr>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">Threshold</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">TP</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">FP</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">FN</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">TN</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">Accuracy</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">Recall</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">Type I Cost</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">Type II Cost</th>
+            <th style="background:{DARK_BLUE};color:{GOLD};padding:0.6rem 0.7rem;text-align:left;font-size:0.75rem;text-transform:uppercase;">Total Cost</th>
+        </tr>"""
+
+        table_body = ""
+        for r in sweep:
+            row_bg = "background:#0d3320;" if r["threshold"] == best["threshold"] else "background:#0a1628;"
+            table_body += (
+                f'<tr style="{row_bg}">'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;font-weight:600;color:{GOLD};">{r["threshold"]:.2f}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;color:#4ade80;">{r["tp"]}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;color:#fbbf24;">{r["fp"]}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;color:#f87171;">{r["fn"]}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;color:#e6f1ff;">{r["tn"]}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;">{r["accuracy"]}%</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;">{r["recall"]}%</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;color:#fbbf24;">&#8377;{r["type1_cost"]:,}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;color:#f87171;">&#8377;{r["type2_cost"]:,}</td>'
+                f'<td style="padding:0.5rem 0.7rem;border-bottom:1px solid #1a3355;font-weight:700;color:#dc3545;">&#8377;{r["total_cost"]:,}</td>'
+                f"</tr>"
+            )
+
+        table_footer = "</table></div>"
+        st.markdown(table_header + table_body + table_footer, unsafe_allow_html=True)
 
     # ════════════════════════════════════════════════════════════════════════
     # TAB 6 — Hypothesis Testing
